@@ -183,12 +183,14 @@ void phylib_roll( phylib_object *new, phylib_object *old, double time ) {
     }
     new->obj.rolling_ball.pos.x = 0.0 + old->obj.rolling_ball.pos.x + (old->obj.rolling_ball.vel.x * time) + (1.0/2.0 * old->obj.rolling_ball.acc.x * (time * time));
     new->obj.rolling_ball.vel.x = 0.0 + old->obj.rolling_ball.vel.x + old->obj.rolling_ball.acc.x * time;
+    new->obj.rolling_ball.acc.x = 0.0 + old->obj.rolling_ball.acc.x;
     if (new->obj.rolling_ball.vel.x * old->obj.rolling_ball.vel.x < 0.0) {
         new->obj.rolling_ball.vel.x = 0.0;
         new->obj.rolling_ball.acc.x = 0.0;
     }
     new->obj.rolling_ball.pos.y = 0.0 + old->obj.rolling_ball.pos.y + (old->obj.rolling_ball.vel.y * time) + (1.0/2.0 * old->obj.rolling_ball.acc.y * (time * time));
     new->obj.rolling_ball.vel.y = 0.0 + old->obj.rolling_ball.vel.y + old->obj.rolling_ball.acc.y * time;
+    new->obj.rolling_ball.acc.y = 0.0 + old->obj.rolling_ball.acc.y;
     if (new->obj.rolling_ball.vel.y * old->obj.rolling_ball.vel.y < 0.0) {
         new->obj.rolling_ball.vel.y = 0.0;
         new->obj.rolling_ball.acc.y = 0.0;
@@ -283,7 +285,7 @@ unsigned char phylib_rolling( phylib_table *t ) {
 // CORRECT
 phylib_table *phylib_segment( phylib_table *table ) {
     if (phylib_rolling(table) == 0) {
-        phylib_free_table(table);
+        //phylib_free_table(table);
         return NULL;
     }
     phylib_table * new_table = phylib_copy_table(table);

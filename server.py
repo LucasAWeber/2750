@@ -3,6 +3,7 @@ import cgi; # used to parse Mutlipart FormData
 import os;
 import math;
 import Physics;
+import json;
 
 from http.server import HTTPServer, BaseHTTPRequestHandler;
 from urllib.parse import urlparse, parse_qsl;
@@ -20,7 +21,27 @@ class MyHandler( BaseHTTPRequestHandler ):
         parsed  = urlparse( self.path );
 
         # check if the web-pages matches the list
-        if parsed.path in [ '/shoot.html' ]:
+        if parsed.path in [ '/game.html' ]:
+
+            # retreive the HTML file
+            fp = open( '.'+self.path );
+            #MAYBE CHANGE??
+            #table = Physics.Table();
+            #table.setupTable();
+            #content = fp.read() % table.svg();
+            content = fp.read();
+
+            # generate the headers
+            self.send_response( 200 ); # OK
+            self.send_header( "Content-type", "text/html" );
+            self.send_header( "Content-length", len( content ) );
+            self.end_headers();
+
+            # send it to the broswer
+            self.wfile.write( bytes( content, "utf-8" ) );
+            fp.close();
+        
+        elif parsed.path in [ '/start.html' ]:
 
             # retreive the HTML file
             fp = open( '.'+self.path );
@@ -64,17 +85,47 @@ class MyHandler( BaseHTTPRequestHandler ):
         # hanle post request
         # parse the URL to get the path and form data
         parsed  = urlparse( self.path );
+        
+        if parsed.path in [ '/game.html' ]:
+            form = cgi.FieldStorage( fp=self.rfile, headers=self.headers, environ = { 'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': self.headers['Content-Type']} );
+            global game;
+            game = Physics.Game(None, form.getvalue("player1name") + " VS " + form.getvalue("player2name"),form.getvalue("player1name"), form.getvalue("player2name"));
+            global table;
+            table = Physics.Table();
+            table.setupTable();
 
-        if parsed.path in [ '/display.html' ]:
+            fp = open( '.'+self.path );
+            content = fp.read() % table.svg();
+            # generate the headers
+            self.send_response( 200 ); # OK
+            self.send_header( "Content-type", "text/html" );
+            self.send_header( "Content-length", len( content ) );
+            self.end_headers();
+
+            # send it to the browser
+            self.wfile.write( bytes( content, "utf-8" ) );
+            fp.close();
+
+        elif parsed.path in [ '/cue-roll' ]:
+            content_length = int(self.headers['Content-Length']);
+            post_data = self.rfile.read(content_length);
+            data = json.loads(post_data.decode('utf-8'));
+            #IDArray = game.shoot(game.gameName, game.player1Name, table, data["velx"], data["vely"]);
+            tableArray = game.shoot(game.gameName, game.player1Name, table, data["velx"], data["vely"]);
+            svgArray = [];
+            for t in tableArray:
+                table = t;
+                svgArray.append(table.svg());
+
+            self.send_response(200);
+            self.send_header('Content-type', 'application/json');
+            self.end_headers();
+            self.wfile.write(json.dumps(svgArray).encode('utf-8'));
+
+        elif parsed.path in [ '/display.html' ]:
 
             # get data send as Multipart FormData (MIME format)
-            form = cgi.FieldStorage( fp=self.rfile,
-                                     headers=self.headers,
-                                     environ = { 'REQUEST_METHOD': 'POST',
-                                                 'CONTENT_TYPE': 
-                                                   self.headers['Content-Type'],
-                                               } 
-                                   );
+            form = cgi.FieldStorage( fp=self.rfile, headers=self.headers, environ = { 'REQUEST_METHOD': 'POST', 'CONTENT_TYPE': self.headers['Content-Type']} );
 
             # Deletes existing svg files
             i = 0;

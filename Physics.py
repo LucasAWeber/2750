@@ -300,6 +300,60 @@ class Table( phylib.phylib_table ):
         string += FOOTER;
         return string;
 
+    def setupTable( self ):
+        Y_OFFSET = math.sqrt(BALL_DIAMETER**2 - BALL_RADIUS**2) + 4;
+        X_OFFSET = BALL_RADIUS + 4;
+
+        # Setting up table
+        pos = Coordinate(TABLE_WIDTH / 2.0, TABLE_LENGTH - (TABLE_WIDTH / 2.0));
+        ball = StillBall(0, pos);
+        self += ball;
+        pos.y = TABLE_WIDTH / 2.0 + Y_OFFSET * 2;
+        ball = StillBall(1, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET, TABLE_WIDTH / 2.0 + Y_OFFSET)
+        ball = StillBall(10, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(3, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 2, TABLE_WIDTH / 2.0);
+        ball = StillBall(6, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(8, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(13, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 3, TABLE_WIDTH / 2.0 - Y_OFFSET);
+        ball = StillBall(9, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(4, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(15, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(2, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 4, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
+        ball = StillBall(14, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(11, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(5, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(12, pos);
+        self += ball;
+        pos.x += X_OFFSET * 2;
+        ball = StillBall(7, pos);
+        self += ball;
+
 class Database():
     def __init__( self, reset=False ):
         if (reset and os.path.exists('phylib.db')):
@@ -391,7 +445,6 @@ class Database():
                 table+=RollingBall(ball[0], pos, vel, acc);
 
         cursor.close();
-        self.conn.commit();
         return table;
     
     def writeTable( self, table ):
@@ -411,7 +464,6 @@ class Database():
                 cursor.execute(f"INSERT INTO BallTable (BALLID, TABLEID) VALUES ({ballID}, {tableID})");
 
         cursor.close();
-        self.conn.commit();
         return tableID-1;
 
     def getGame( self, gameID ):
@@ -422,7 +474,6 @@ class Database():
         player1Name = temp[0][1];
         player2Name = temp[1][1];
         cursor.close();
-        self.conn.commit();
         return gameName, player1Name, player2Name;
     
     def setGame( self, gameName, player1Name, player2Name ):
@@ -432,7 +483,6 @@ class Database():
         cursor.execute(f"INSERT INTO Player (GAMEID, PLAYERNAME) VALUES ({gameID}, '{player1Name}')");
         cursor.execute(f"INSERT INTO Player (GAMEID, PLAYERNAME) VALUES ({gameID}, '{player2Name}')");
         cursor.close();
-        self.conn.commit();
         return gameID;
     
     def newShot( self, gameName, playerName ):
@@ -442,22 +492,23 @@ class Database():
         cursor.execute(f"INSERT INTO Shot (PLAYERID, GAMEID) VALUES ({temp[1]}, {temp[0]})");
         shotID = cursor.lastrowid;
         cursor.close();
-        self.conn.commit();
         return shotID;
 
     def setTableShot( self, tableID, shotID ):
         cursor = self.conn.cursor();
         cursor.execute(f"INSERT INTO TableShot (TABLEID, SHOTID) VALUES ({tableID}, {shotID})");
         cursor.close();
-        self.conn.commit();
     
+    def commit( self ):
+        self.conn.commit();
+
     def close( self ):
         self.conn.commit();
         self.conn.close();
 
 class Game():
     def __init__( self, gameID=None, gameName=None, player1Name=None, player2Name=None ):
-        self.db = Database();
+        self.db = Database(True);
         self.db.createDB();
         if (gameID != None and gameName == None and player1Name == None and player2Name == None):
             self.gameID = gameID;
@@ -486,18 +537,39 @@ class Game():
             acc = Coordinate(-1.0 * xvel / speed * DRAG, -1.0 * yvel / speed * DRAG);
         cueBall.obj.rolling_ball.acc.x = acc.x;
         cueBall.obj.rolling_ball.acc.y = acc.y;
+        #tableIDArray = [];
+        tableArray = [];
         while (table):
+            #tableID = self.db.writeTable(table);
+            #tableIDArray.append(tableID);
+            #self.db.setTableShot(tableID, shotID);
+            tableArray.append(table);
             temp = table;
             start = table.time;
             table = table.segment();
             if (table == None):
                 break;
             end = table.time;
-            for i in range(0,round((end - start) / FRAME_RATE)):
-                temp = temp.roll(i*FRAME_RATE);
+            for i in range(1,round((end - start) / FRAME_RATE)):
+                temp = temp.roll(FRAME_RATE);
                 temp.time = start+(i*FRAME_RATE);
-                tableID = self.db.writeTable(temp);
-                self.db.setTableShot(tableID, shotID);
+                #tableID = self.db.writeTable(temp);
+                #tableIDArray.append(tableID);
+                #self.db.setTableShot(tableID, shotID);
+                tableArray.append(temp);
+
+        # resets cue ball position if it was sunk
+        if (temp.cueBall() == None):
+            pos = Coordinate(TABLE_WIDTH / 2.0, TABLE_LENGTH - (TABLE_WIDTH / 2.0));
+            cue = StillBall(0, pos);
+            temp += cue;
+            #tableID = self.db.writeTable(temp);
+            #tableIDArray.append(tableID);
+            #self.db.setTableShot(tableID, shotID);
+            tableArray.append(temp);
+        #self.db.commit();
+        #return tableIDArray;
+        return tableArray;
 
 
 

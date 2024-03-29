@@ -1,0 +1,157 @@
+<html>
+  <head>
+    <title> Game </title>
+    <style>
+      .svg-container {
+        position: relative;
+      }
+
+      .svg-container svg {
+        width: 280px;
+        height: 550px;
+        top: 200;
+        right: 200;
+        position: absolute;
+      }
+
+      .line-svg {
+        top: 0;
+        right: 0;
+        pointer-events: none;
+        position: absolute;
+      }
+      html {overflow:hidden;}
+    </style>
+  </head>
+  <body>
+    <div class="svg-container" id="svg-table">
+      %s
+    </div>
+    <svg class="line-svg" id="shoot-svg" width="700" height="1375" viewBox="-25 -25 1400 2750"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+      <line></line>
+    </svg>
+  </body>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
+  </script>
+  <script>
+    $(document).ready(function()
+    {
+    const speedMultiplier = 25;
+    var cue = "circle[fill='WHITE']";
+    var shoot = false;
+    var animating = false;
+    var x1 = 0;
+    var y1 = 0;
+    var x2 = 0;
+    var y2 = 0;
+    var svgContainer = $('#svg-table');
+    svgContainer.on('mousedown', cue, startshot);
+    //$(cue).on("mousedown", startshot);
+    $("html").on("mousemove", trackit);
+    $("html").on("mouseup", stopshot);
+
+    function stopshot(event)
+    {
+      if (event.button == 0 && shoot) 
+      {
+        shoot = false;
+        animating = true;
+        velx = (x1 - x2) * speedMultiplier;
+        vely = (y1 - y2) * speedMultiplier;
+        x1 = 0;
+        y1 = 0;
+        x2 = 0;
+        y2 = 0;
+        $("line").attr('x1', x1);
+        $("line").attr('y1', y1);
+        $("line").attr('x2', x2);
+        $("line").attr('y2', y2);
+        $.ajax({url: "/cue-roll", type: "POST", contentType: "application/json", data: JSON.stringify({ velx: velx, vely: vely }),
+        success: animate});
+      }
+    }
+
+    function animate(tables)
+    {
+      setTimeout(frame, 10, tables, 0);
+    }
+
+    function frame(tables, i)
+    {
+      if (i < tables.length) {
+        var div = document.getElementById('svg-table');
+        div.innerHTML = tables[i];
+        setTimeout(frame, 10, tables, i+1);
+      }
+      else {
+        animating = false;
+      }
+    }
+
+    function startshot(event)
+    {
+      if (event.button == 0 && !animating)
+      {
+        shoot = true;
+        var cue = "circle[fill='WHITE']";
+        var pt = SVGtopage($("svg")[0], $(cue).attr('cx'), $(cue).attr('cy'));
+        pt = pagetoSVG(document.getElementById("shoot-svg"), pt.x, pt.y);
+        x1 = pt.x;
+        y1 = pt.y;
+        x2 = x1;
+        y2 = y1;
+        $("line").attr('x1', x1);
+        $("line").attr('y1', y1);
+        $("line").attr('x2', x2);
+        $("line").attr('y2', y2);
+        $("line").attr('style', 'stroke:black;stroke-width:7');
+      }
+    }
+
+    function trackit(event)
+    {
+      if (shoot)
+      {
+        var pt = pagetoSVG(document.getElementById("shoot-svg"), event.pageX, event.pageY);
+        var velx = (x1-pt.x) * speedMultiplier;
+        var vely = (y1-pt.y) * speedMultiplier;
+        var speed = Math.sqrt(velx**2 + vely**2);
+        if (speed >= 10000)
+        {
+          var ratio = 10000 / speed;
+          x2 = x1 - velx/speedMultiplier * ratio;
+          y2 = y1 - vely/speedMultiplier * ratio;
+        }
+        else
+        {
+          x2 = pt.x;
+          y2 = pt.y;
+        }
+        $("line").attr('x2', x2);
+        $("line").attr('y2', y2);
+      }
+    }
+
+    function pagetoSVG(svgElement, x, y)
+    {
+      var ctm = svgElement.getScreenCTM().inverse();
+      var pt = svgElement.createSVGPoint();
+      pt.x = x;
+      pt.y = y;
+      return pt.matrixTransform(ctm);
+    }
+
+    function SVGtopage(svgElement, x, y)
+    {
+      var ctm = svgElement.getScreenCTM();
+      var pt = svgElement.createSVGPoint();
+      pt.x = x;
+      pt.y = y;
+      return pt.matrixTransform(ctm);
+    }
+
+  });
+  </script>
+</html>
