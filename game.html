@@ -2,6 +2,12 @@
   <head>
     <title> Game </title>
     <style>
+      .stats {
+        top: 200;
+        left: 200;
+        position: absolute;
+      }
+
       .svg-container {
         position: relative;
       }
@@ -24,6 +30,12 @@
     </style>
   </head>
   <body>
+    <div class="stats">
+      <h2> %s <span id="p1Turn"> %s </span> </h2>
+      <h3 id="player1Team"> </h3>
+      <h2> %s <span id="p2Turn"> %s </span> </h2>
+      <h3 id="player2Team"> </h3>
+    </div>
     <div class="svg-container" id="svg-table">
       %s
     </div>
@@ -73,8 +85,27 @@
       }
     }
 
-    function animate(tables)
+    function animate(response)
     {
+      tables = response.tables;
+      var div = document.getElementById('player1Team');
+      div.innerHTML = response.player1Team;
+      div = document.getElementById('player2Team');
+      div.innerHTML = response.player2Team;
+      if (response.turn == 0) {
+        div = document.getElementById('p1Turn');
+        div.innerHTML = " - YOUR TURN";
+        div = document.getElementById('p2Turn');
+        div.innerHTML = "";
+      }
+      else {
+        div = document.getElementById('p1Turn');
+        div.innerHTML = "";
+        div = document.getElementById('p2Turn');
+        div.innerHTML = " - YOUR TURN";
+      }
+      console.log(player1Team);
+      console.log(player2Team);
       setTimeout(frame, 10, tables, 0);
     }
 

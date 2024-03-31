@@ -290,6 +290,17 @@ class Table( phylib.phylib_table ):
             if (object.type == 0 and object.obj.still_ball.number == 0):
                 cueBall = object;
         return cueBall;
+    
+    def eightBall( self ):
+        eightBall = None;
+        for object in self:
+            if (object == None):
+                continue;
+            elif (object.type == 0 and object.obj.still_ball.number == 8):
+                eightBall = object;
+            elif (object.type == 1 and object.obj.rolling_ball.number == 8):
+                eightBall = object;
+        return eightBall;
 
     def svg( self ):
         string = HEADER;
@@ -311,48 +322,49 @@ class Table( phylib.phylib_table ):
         pos.y = TABLE_WIDTH / 2.0 + Y_OFFSET * 2;
         ball = StillBall(1, pos);
         self += ball;
-        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET, TABLE_WIDTH / 2.0 + Y_OFFSET)
-        ball = StillBall(10, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET * 3, TABLE_WIDTH / 2.0 - Y_OFFSET);
+        ball = StillBall(2, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET, TABLE_WIDTH / 2.0 + Y_OFFSET)
         ball = StillBall(3, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET, TABLE_WIDTH / 2.0 - Y_OFFSET);
+        ball = StillBall(4, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
+        ball = StillBall(5, pos);
         self += ball;
         pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 2, TABLE_WIDTH / 2.0);
         ball = StillBall(6, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(8, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET * 4, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
+        ball = StillBall(7, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(13, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0, TABLE_WIDTH / 2.0);
+        ball = StillBall(8, pos);
         self += ball;
         pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 3, TABLE_WIDTH / 2.0 - Y_OFFSET);
         ball = StillBall(9, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(4, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET, TABLE_WIDTH / 2.0 + Y_OFFSET);
+        ball = StillBall(10, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(15, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 2, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
+        ball = StillBall(11, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(2, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET * 2, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
+        ball = StillBall(12, pos);
+        self += ball;
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET * 2, TABLE_WIDTH / 2.0);
+        ball = StillBall(13, pos);
         self += ball;
         pos = Coordinate(TABLE_WIDTH / 2.0 - X_OFFSET * 4, TABLE_WIDTH / 2.0 - Y_OFFSET * 2);
         ball = StillBall(14, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(11, pos);
+        pos = Coordinate(TABLE_WIDTH / 2.0 + X_OFFSET, TABLE_WIDTH / 2.0 - Y_OFFSET);
+        ball = StillBall(15, pos);
         self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(5, pos);
-        self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(12, pos);
-        self += ball;
-        pos.x += X_OFFSET * 2;
-        ball = StillBall(7, pos);
-        self += ball;
+        
 
 class Database():
     def __init__( self, reset=False ):
@@ -540,9 +552,9 @@ class Game():
         #tableIDArray = [];
         tableArray = [];
         while (table):
-            #tableID = self.db.writeTable(table);
+            tableID = self.db.writeTable(table);
             #tableIDArray.append(tableID);
-            #self.db.setTableShot(tableID, shotID);
+            self.db.setTableShot(tableID, shotID);
             tableArray.append(table);
             temp = table;
             start = table.time;
@@ -553,9 +565,9 @@ class Game():
             for i in range(1,round((end - start) / FRAME_RATE)):
                 temp = temp.roll(FRAME_RATE);
                 temp.time = start+(i*FRAME_RATE);
-                #tableID = self.db.writeTable(temp);
+                tableID = self.db.writeTable(temp);
                 #tableIDArray.append(tableID);
-                #self.db.setTableShot(tableID, shotID);
+                self.db.setTableShot(tableID, shotID);
                 tableArray.append(temp);
 
         # resets cue ball position if it was sunk
@@ -563,11 +575,11 @@ class Game():
             pos = Coordinate(TABLE_WIDTH / 2.0, TABLE_LENGTH - (TABLE_WIDTH / 2.0));
             cue = StillBall(0, pos);
             temp += cue;
-            #tableID = self.db.writeTable(temp);
+            tableID = self.db.writeTable(temp);
             #tableIDArray.append(tableID);
-            #self.db.setTableShot(tableID, shotID);
+            self.db.setTableShot(tableID, shotID);
             tableArray.append(temp);
-        #self.db.commit();
+        self.db.commit();
         #return tableIDArray;
         return tableArray;
 
