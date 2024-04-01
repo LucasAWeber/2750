@@ -1,0 +1,37 @@
+<html>
+    <head>
+        <title> Winner </title>
+        <style>
+            .stats {
+              top: 200;
+              left: 200;
+              position: absolute;
+            }
+      
+            .svg-container {
+              position: relative;
+            }
+      
+            .svg-container svg {
+              width: 280px;
+              height: 550px;
+              top: 200;
+              right: 200;
+              position: absolute;
+            }
+
+            html {overflow:hidden;}
+          </style>
+    </head>
+    <body>
+        <div class="stats">
+            <h2> %s </h2>
+            <form action="start.html" method="get">
+                <h3> <input type="submit" value="Play again"/> </h3>
+            </form>
+        </div>
+        <div class="svg-container" id="svg-table">
+            %s
+        </div>
+    </body>
+</html>

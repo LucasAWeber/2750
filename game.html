@@ -26,16 +26,15 @@
         pointer-events: none;
         position: absolute;
       }
+
+      .ball-svg {
+        pointer-events: none;
+      }
+
       html {overflow:hidden;}
     </style>
   </head>
   <body>
-    <div class="stats">
-      <h2> %s <span id="p1Turn"> %s </span> </h2>
-      <h3 id="player1Team"> </h3>
-      <h2> %s <span id="p2Turn"> %s </span> </h2>
-      <h3 id="player2Team"> </h3>
-    </div>
     <div class="svg-container" id="svg-table">
       %s
     </div>
@@ -44,6 +43,18 @@
     xmlns:xlink="http://www.w3.org/1999/xlink">
       <line></line>
     </svg>
+    <div class="stats">
+      <h2> %s <span id="p1Turn"> %s </span> </h2>
+      <h3 id="player1Team"> </h3>
+      <div id="p1BallSvg" class="ball-svg">
+        
+      </div>
+      <h2> %s <span id="p2Turn"> %s </span> </h2>
+      <h3 id="player2Team"> </h3>
+      <div id="p2BallSvg" class="ball-svg">
+        
+      </div>
+    </div>
   </body>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js">
   </script>
@@ -54,13 +65,46 @@
     var cue = "circle[fill='WHITE']";
     var shoot = false;
     var animating = false;
+    var turn = 0;
     var x1 = 0;
     var y1 = 0;
     var x2 = 0;
     var y2 = 0;
+    var status = 0;
     var svgContainer = $('#svg-table');
+    var lowerSVG = `
+      <svg width="275" height="50" viewBox="0 0 550 100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <rect width="550" height="100" x="0" y="0" fill="#C0D0C0"></rect>
+        <rect width="550" height="10" x="0" y="0" fill="darkgreen"></rect>
+        <rect width="550" height="10" x="0" y="90" fill="darkgreen"></rect>
+        <rect width="10" height="100" x="0" y="0" fill="darkgreen"></rect>
+        <rect width="10" height="100" x="540" y="0" fill="darkgreen"></rect>
+        <circle cx="50" cy="50" r="25" fill="YELLOW"></circle>
+        <circle cx="125" cy="50" r="25" fill="BLUE"></circle>
+        <circle cx="200" cy="50" r="25" fill="RED"></circle>
+        <circle cx="275" cy="50" r="25" fill="PURPLE"></circle>
+        <circle cx="350" cy="50" r="25" fill="ORANGE"></circle>
+        <circle cx="425" cy="50" r="25" fill="GREEN"></circle>
+        <circle cx="500" cy="50" r="25" fill="BROWN"></circle>
+      </svg>
+    `;
+    var upperSVG = `
+      <svg width="275" height="50" viewBox="0 0 550 100" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <rect width="550" height="100" x="0" y="0" fill="#C0D0C0"></rect>
+        <rect width="550" height="10" x="0" y="0" fill="darkgreen"></rect>
+        <rect width="550" height="10" x="0" y="90" fill="darkgreen"></rect>
+        <rect width="10" height="100" x="0" y="0" fill="darkgreen"></rect>
+        <rect width="10" height="100" x="540" y="0" fill="darkgreen"></rect>
+        <circle cx="50" cy="50" r="25" fill="LIGHTYELLOW"></circle>
+        <circle cx="125" cy="50" r="25" fill="LIGHTBLUE"></circle>
+        <circle cx="200" cy="50" r="25" fill="PINK"></circle>
+        <circle cx="275" cy="50" r="25" fill="MEDIUMPURPLE"></circle>
+        <circle cx="350" cy="50" r="25" fill="LIGHTSALMON"></circle>
+        <circle cx="425" cy="50" r="25" fill="LIGHTGREEN"></circle>
+        <circle cx="500" cy="50" r="25" fill="SANDYBROWN"></circle>
+      </svg>
+    `;
     svgContainer.on('mousedown', cue, startshot);
-    //$(cue).on("mousedown", startshot);
     $("html").on("mousemove", trackit);
     $("html").on("mouseup", stopshot);
 
@@ -87,25 +131,26 @@
 
     function animate(response)
     {
-      tables = response.tables;
+      status = response.status;
+      turn = response.turn;
+      var tables = response.tables;
       var div = document.getElementById('player1Team');
       div.innerHTML = response.player1Team;
       div = document.getElementById('player2Team');
       div.innerHTML = response.player2Team;
-      if (response.turn == 0) {
-        div = document.getElementById('p1Turn');
-        div.innerHTML = " - YOUR TURN";
-        div = document.getElementById('p2Turn');
-        div.innerHTML = "";
+      
+      div = document.getElementById('p1BallSvg');
+      if (response.player1Team == "Upper") {
+        div.innerHTML = upperSVG;
+        div = document.getElementById('p2BallSvg');
+        div.innerHTML = lowerSVG;
       }
-      else {
-        div = document.getElementById('p1Turn');
-        div.innerHTML = "";
-        div = document.getElementById('p2Turn');
-        div.innerHTML = " - YOUR TURN";
+      else if (response.player1Team == "Lower") {
+        div.innerHTML = lowerSVG;
+        div = document.getElementById('p2BallSvg');
+        div.innerHTML = upperSVG;
       }
-      console.log(player1Team);
-      console.log(player2Team);
+      
       setTimeout(frame, 10, tables, 0);
     }
 
@@ -118,6 +163,23 @@
       }
       else {
         animating = false;
+        if (status != 0) {
+          window.location.replace("win.html");
+        }
+        else {
+          if (turn == 0) {
+            div = document.getElementById('p1Turn');
+            div.innerHTML = " - YOUR TURN";
+            div = document.getElementById('p2Turn');
+            div.innerHTML = "";
+          }
+          else {
+            div = document.getElementById('p1Turn');
+            div.innerHTML = "";
+            div = document.getElementById('p2Turn');
+            div.innerHTML = " - YOUR TURN";
+          }
+        }
       }
     }
 

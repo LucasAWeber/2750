@@ -41,24 +41,19 @@ def determinePlayerTeam(table):
     else:
         return 1;
 
-def eightBallWin(table, team):
+def eightBallWin(table, playerTeams):
     balls = [];
-    if (team == 0):
-        return False;
-
     for obj in table:
         if (obj != None):
             if (obj.type == 0):
                 balls.append(obj.obj.still_ball.number);
             elif (obj.type == 1):
                 balls.append(obj.obj.rolling_ball.number);
-    if (team == -1):
-        if (any(ball != 0 and ball < 8 for ball in balls)):
-            return False;
-    elif (team == 1):
-        if (any(ball > 8 for ball in balls)):
-            return False;
-    return True;
+    if (any(ball != 0 and ball < 8 for ball in balls)):
+        return playerTeams.index(-1);
+    elif (any(ball > 8 for ball in balls)):
+        return playerTeams.index(1);
+    return -1;
 
 
 # handler for our web-server - handles both GET and POST requests
@@ -66,7 +61,7 @@ class MyHandler( BaseHTTPRequestHandler ):
     def do_GET(self):
         # parse the URL to get the path and form data
         parsed  = urlparse( self.path );
-
+        print(self.path);
         # check if the web-pages matches the list
         if parsed.path in [ '/game.html' ]:
 
@@ -90,8 +85,31 @@ class MyHandler( BaseHTTPRequestHandler ):
         elif parsed.path in [ '/start.html' ]:
 
             # retreive the HTML file
-            fp = open( '.'+self.path );
+            fp = open( '.'+self.path.replace('?','') );
             content = fp.read();
+
+            # generate the headers
+            self.send_response( 200 ); # OK
+            self.send_header( "Content-type", "text/html" );
+            self.send_header( "Content-length", len( content ) );
+            self.end_headers();
+
+            # send it to the broswer
+            self.wfile.write( bytes( content, "utf-8" ) );
+            fp.close();
+        
+        elif parsed.path in [ '/win.html' ]:
+            global game;
+            global table;
+            global gameStatus;
+
+            fp = open( '.'+self.path );
+            if (gameStatus == 1):
+                winnerText = game.player1Name + " is the winner!";
+            else:
+                winnerText = game.player2Name + " is the winner!";
+            
+            content = fp.read() % (winnerText, table.svg());
 
             # generate the headers
             self.send_response( 200 ); # OK
@@ -134,12 +152,12 @@ class MyHandler( BaseHTTPRequestHandler ):
             firstBall = True;
             # Game status (playing = 0, player 1 win = 1, player 2 win = 2)
             gameStatus = 0;
-            
+
             fp = open( '.'+self.path );
             if (turn == 0):
-                content = fp.read() % (game.player1Name, " - YOUR TURN", game.player2Name, "", table.svg());
+                content = fp.read() % (table.svg(), game.player1Name, " - YOUR TURN", game.player2Name, "");
             else:
-                content = fp.read() % (game.player1Name, "", game.player2Name, " - YOUR TURN", table.svg());
+                content = fp.read() % (table.svg(), game.player1Name, "", game.player2Name, " - YOUR TURN");
             
             # generate the headers
             self.send_response( 200 ); # OK
@@ -163,12 +181,13 @@ class MyHandler( BaseHTTPRequestHandler ):
                 table = t;
                 svgArray.append(table.svg());
                 if (gameStatus == 0 and table.eightBall() == None):
-                    if (eightBallWin(table, playerTeams[turn])):
+                    winning = eightBallWin(table, playerTeams)
+                    if (winning == 0):
                         gameStatus = 1;
-                        print("Player " + str(turn) + " Wins!");
+                    elif (winning == 1):
+                        gameStatus = 2;
                     else:
-                        gameStatus = 1;
-                        print("Player " + str(turn) + " Loses!");
+                        gameStatus = newTurn(turn) + 1;
                 if (firstBall):
                     team = determinePlayerTeam(table);
                     if (team != 0):
@@ -183,7 +202,8 @@ class MyHandler( BaseHTTPRequestHandler ):
                 "tables" : svgArray,
                 "turn" : turn,
                 "player1Team" : "",
-                "player2Team" : ""
+                "player2Team" : "",
+                "status" : gameStatus
             };
             
             if (playerTeams[0] == -1):
